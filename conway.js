@@ -1,13 +1,17 @@
 var Game = function(){
     var cells = [];
-    var gapSize = 0.5;
-    var cellSize = 10;
+    var cellSize = 5;
+    var gapSize = cellSize/20;
 
     var canvas = document.getElementById("game");
     var ctx = canvas.getContext("2d");
 
     var gameWidth, gameHeight;
     var loopAllowed = false;
+
+    var bgColor = "#10232c";
+    var deadColor = "#071013";
+    var aliveColor = "#23B5D3";
 
 
     function init(){
@@ -92,15 +96,15 @@ var Game = function(){
     }
 
     function redraw(){
-        ctx.fillStyle = "#4f4f4f";
+        ctx.fillStyle = bgColor;
         ctx.fillRect(0,0,ctx.canvas.clientWidth, ctx.canvas.clientHeight);
         for (var x = 0; x < cells.length; x++){
             for (var y = 0; y < cells[x].length; y++) {
                 var cell = cells[x][y];
                 if (cell === false){
-                    drawCell(x, y, "#000");
+                    drawCell(x, y, deadColor);
                 } else if (cell === true) {
-                    drawCell(x, y, "#7e00ff");
+                    drawCell(x, y, aliveColor);
                 } else {
                     console.error("Cell [" + x + ", " + y + "] has invalid value (" + cell + ")")
                 }
