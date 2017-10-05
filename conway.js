@@ -1,22 +1,38 @@
 var Game = function(){
-    var canvas = document.getElementById("game");
-    canvas.width = document.body.clientWidth;
-    canvas.height = document.body.clientHeight;
-    var ctx = canvas.getContext("2d");
-
     var cells = [];
     var gapSize = 0.5;
     var cellSize = 10;
-    var gameWidth = Math.floor(ctx.canvas.clientWidth / cellSize) + 1;
-    var gameHeight = Math.floor(ctx.canvas.clientHeight / cellSize) + 1;
+
+    var canvas = document.getElementById("game");
+    var ctx = canvas.getContext("2d");
+
+    var gameWidth, gameHeight;
     var loopAllowed = false;
 
-    window.addEventListener('resize', function(){
+
+    function init(){
+        calcSize();
+        seedGame(0.7);
+        redraw();
+        setInterval(next, 50);
+        canvas.addEventListener("mousemove", onMouseMove, false);
+        window.addEventListener('resize', calcSize, true);
+    }
+
+    function onMouseMove(e) {
+        var currX = e.clientX - canvas.offsetLeft;
+        var currY = e.clientY - canvas.offsetTop;
+        var x = Math.floor(currX / cellSize);
+        var y = Math.floor(currY / cellSize);
+        cells[x][y] = !cells[x][y];
+    }
+
+    function calcSize(){
         canvas.width = document.body.clientWidth;
         canvas.height = document.body.clientHeight;
         gameWidth = Math.floor(ctx.canvas.clientWidth / cellSize) + 1;
         gameHeight = Math.floor(ctx.canvas.clientHeight / cellSize) + 1;
-    }, true);
+    }
 
     function drawCell(x, y, color){
         ctx.fillStyle = color;
@@ -41,7 +57,6 @@ var Game = function(){
 
             var xnf = xn;
             var ynf = yn;
-
 
             if (xn < 0) { xnf = xn + gameWidth; }
             if (yn < 0) { ynf = yn + gameHeight; }
@@ -76,17 +91,18 @@ var Game = function(){
         return count;
     }
 
-    function draw(){
+    function redraw(){
         ctx.fillStyle = "#4f4f4f";
         ctx.fillRect(0,0,ctx.canvas.clientWidth, ctx.canvas.clientHeight);
         for (var x = 0; x < cells.length; x++){
             for (var y = 0; y < cells[x].length; y++) {
-                if (cells[x][y] === false){
+                var cell = cells[x][y];
+                if (cell === false){
                     drawCell(x, y, "#000");
-                } else if (cells[x][y] === true) {
+                } else if (cell === true) {
                     drawCell(x, y, "#7e00ff");
                 } else {
-                    drawCell(x, y, "#fff");
+                    console.error("Cell [" + x + ", " + y + "] has invalid value (" + cell + ")")
                 }
             }
         }
@@ -103,20 +119,10 @@ var Game = function(){
             }
         }
         cells = newCells;
-        draw();
+        redraw();
     }
 
-    seedGame(0.7);
-    next();
-    setInterval(next, 50);
-    canvas.addEventListener("mousemove", function (e) {
-        var currX = e.clientX - canvas.offsetLeft;
-        var currY = e.clientY - canvas.offsetTop;
-        var x = Math.floor(currX / cellSize);
-        var y = Math.floor(currY / cellSize);
-        cells[x][y] = !cells[x][y];
-    }, false);
-
+    init();
     return this;
 };
 
