@@ -7,16 +7,17 @@ var Game = function(){
     var ctx = canvas.getContext("2d");
 
     var gameWidth, gameHeight;
-    var loopAllowed = false;
+    var loopAllowed = true;
 
     var bgColor = "#10232c";
     var deadColor = "#071013";
     var aliveColor = "#23B5D3";
+    var colorCount = 50;
 
 
     function init(){
         calcSize();
-        seedGame(0.7);
+        seedGame(0.4);
         redraw();
         setInterval(next, 50);
         canvas.addEventListener("mousemove", onMouseMove, false);
@@ -28,7 +29,9 @@ var Game = function(){
         var currY = e.clientY - canvas.offsetTop;
         var x = Math.floor(currX / cellSize);
         var y = Math.floor(currY / cellSize);
-        cells[x][y] = !cells[x][y];
+        if (x > 0 && x < gameWidth && y > 0 && y < gameHeight){
+            cells[x][y]["alive"] = !cells[x][y]["alive"];
+        }
     }
 
     function calcSize(){
@@ -47,14 +50,16 @@ var Game = function(){
         for (var x = 0; x < gameWidth; x++){
             cells[x] = [];
             for (var y = 0; y < gameHeight; y++) {
-                cells[x][y] = Math.random() > probability;
+                var cl = "hsl(" + Math.floor(Math.random() * colorCount) * (360 / colorCount) + ", 75%, 60%)";
+                var isAlive = Math.random() > probability;
+                cells[x][y] = {alive: isAlive, color: isAlive ? cl : deadColor};
             }
         }
     }
 
-    function neighborsCount(x, y){
+    function getNeighbors(x, y){
         var vectors = [[1, -1], [0, -1], [-1, -1], [1, 0], [-1, 0], [1, 1], [0, 1], [-1, 1]];
-        var count = 0;
+        var neighbors = [];
         for (var i = 0; i < vectors.length; i++){
             var xn = vectors[i][0] + x;
             var yn = vectors[i][1] + y;
@@ -69,30 +74,30 @@ var Game = function(){
 
             var isOutside = (xnf !== xn) || (ynf !== yn);
 
-            if (loopAllowed && isOutside && cells[xnf][ynf] === true){
-                count++;
+            if (isOutside){
+                if (loopAllowed && cells[xnf][ynf]["alive"] === true){
+                    neighbors.push(cells[xnf][ynf]);
+                }
+            } else if (cells[xn][yn]["alive"] === true) {
+                neighbors.push(cells[xnf][ynf]);
             }
 
-            if (!isOutside && cells[xn][yn] === true) {
-                count++;
-            }
             // drawCell(x, y, "#F00");
             // if (loopAllowed){
-            //     if ( cells[xnf][ynf] === true) {
+            //     if ( cells[xnf][ynf]["alive"] === true) {
             //         drawCell(xnf, ynf, "#007300");
             //     } else {
             //         drawCell(xnf, ynf, "#0f0");
             //     }
             // } else if (!isOutside) {
-            //     if ( cells[xn][yn] === true) {
+            //     if ( cells[xn][yn]["alive"] === true) {
             //         drawCell(xn, yn, "#007373");
             //     } else {
             //         drawCell(xn, yn, "#0ff");
             //     }
             // }
-
         }
-        return count;
+        return neighbors;
     }
 
     function redraw(){
@@ -101,15 +106,31 @@ var Game = function(){
         for (var x = 0; x < cells.length; x++){
             for (var y = 0; y < cells[x].length; y++) {
                 var cell = cells[x][y];
-                if (cell === false){
-                    drawCell(x, y, deadColor);
-                } else if (cell === true) {
-                    drawCell(x, y, aliveColor);
-                } else {
-                    console.error("Cell [" + x + ", " + y + "] has invalid value (" + cell + ")")
-                }
+                drawCell(x, y, cell["color"]);
             }
         }
+    }
+
+    function getNextColor(colors){
+        if(colors.length === 0)
+            return null;
+        var modeMap = {};
+        var maxEl = colors[0], maxCount = 1;
+
+        for(var i = 0; i < colors.length; i++)
+        {
+            var el = colors[i];
+            if(modeMap[el] === null)
+                modeMap[el] = 1;
+            else
+                modeMap[el]++;
+            if(modeMap[el] > maxCount)
+            {
+                maxEl = el;
+                maxCount = modeMap[el];
+            }
+        }
+        return maxEl;
     }
 
     function next(){
@@ -117,9 +138,13 @@ var Game = function(){
         for (var x = 0; x < cells.length; x++){
             newCells[x] = [];
             for (var y = 0; y < cells[x].length; y++) {
-                var nc = neighborsCount(x, y);
-                var isAlive = cells[x][y];
-                newCells[x][y] = (isAlive && !(nc > 3 || nc < 2)) || (!isAlive && nc === 3);
+                var neighbors = getNeighbors(x, y);
+                var nc = neighbors.length;
+                var isAlive = cells[x][y]["alive"];
+                var isNextAlive = (isAlive && !(nc > 3 || nc < 2)) || (!isAlive && nc === 3);
+                var cl = isNextAlive ? getNextColor(neighbors.map(function(item){ return item["color"]; })) : deadColor;
+
+                newCells[x][y] = {prevAlive: isAlive, alive: isNextAlive, color: cl, prevneighbors: nc};
             }
         }
         cells = newCells;
