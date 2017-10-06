@@ -1,6 +1,6 @@
 var Game = function(){
     var cells = [];
-    var cellSize = 5;
+    var cellSize = 4;
     var gapSize = cellSize/20;
 
     var canvas = document.getElementById("game");
@@ -12,7 +12,7 @@ var Game = function(){
     var bgColor = "#10232c";
     var deadColor = "#071013";
     var aliveColor = "#23B5D3";
-    var colorCount = 50;
+    var colorCount = 5;
 
 
     function init(){
@@ -50,7 +50,8 @@ var Game = function(){
         for (var x = 0; x < gameWidth; x++){
             cells[x] = [];
             for (var y = 0; y < gameHeight; y++) {
-                var cl = "hsl(" + Math.floor(Math.random() * colorCount) * (360 / colorCount) + ", 75%, 60%)";
+                console.log(colorCount);
+                var cl = "hsl(" + Math.floor(Math.random() * colorCount) * (360 / colorCount) + ", 70%, 50%)";
                 var isAlive = Math.random() > probability;
                 cells[x][y] = {alive: isAlive, color: isAlive ? cl : deadColor};
             }
@@ -111,6 +112,7 @@ var Game = function(){
         }
     }
 
+    // Taken from: https://stackoverflow.com/a/1053865/5384214
     function getNextColor(colors){
         if(colors.length === 0)
             return null;
@@ -135,16 +137,20 @@ var Game = function(){
 
     function next(){
         var newCells = [];
+        var born = [3];
+        var survive = [3, 2];
+
         for (var x = 0; x < cells.length; x++){
             newCells[x] = [];
             for (var y = 0; y < cells[x].length; y++) {
                 var neighbors = getNeighbors(x, y);
                 var nc = neighbors.length;
                 var isAlive = cells[x][y]["alive"];
-                var isNextAlive = (isAlive && !(nc > 3 || nc < 2)) || (!isAlive && nc === 3);
+                var isNextAlive = (isAlive && survive.indexOf(nc) !== -1) || (!isAlive && born.indexOf(nc) !== -1);
+
                 var cl = isNextAlive ? getNextColor(neighbors.map(function(item){ return item["color"]; })) : deadColor;
 
-                newCells[x][y] = {prevAlive: isAlive, alive: isNextAlive, color: cl, prevneighbors: nc};
+                newCells[x][y] = {alive: isNextAlive, color: cl};
             }
         }
         cells = newCells;
