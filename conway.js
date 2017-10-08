@@ -1,28 +1,19 @@
-var Game = function(){
+var Game = function(canvasID){
     var cells = [];
     var cellSize = 4;
     var gapSize = cellSize/20;
 
-    var canvas = document.getElementById("game");
+    var canvas = document.getElementById(canvasID);
     var ctx = canvas.getContext("2d");
 
-    var gameWidth, gameHeight;
+    var gameWidth, gameHeight, refresh;
     var loopAllowed = true;
+    this.running = true;
 
     var bgColor = "#10232c";
     var deadColor = "#071013";
     var aliveColor = "#23B5D3";
-    var colorCount = 5;
-
-
-    function init(){
-        calcSize();
-        seedGame(0.4);
-        redraw();
-        setInterval(next, 50);
-        canvas.addEventListener("mousemove", onMouseMove, false);
-        window.addEventListener('resize', calcSize, true);
-    }
+    var colorCount = 10;
 
     function onMouseMove(e) {
         var currX = e.clientX - canvas.offsetLeft;
@@ -50,8 +41,7 @@ var Game = function(){
         for (var x = 0; x < gameWidth; x++){
             cells[x] = [];
             for (var y = 0; y < gameHeight; y++) {
-                console.log(colorCount);
-                var cl = "hsl(" + Math.floor(Math.random() * colorCount) * (360 / colorCount) + ", 70%, 50%)";
+                var cl = "hsl(" + Math.floor(Math.random() * colorCount) * (360 / colorCount) + ", 90%, 70%)";
                 var isAlive = Math.random() > probability;
                 cells[x][y] = {alive: isAlive, color: isAlive ? cl : deadColor};
             }
@@ -135,30 +125,57 @@ var Game = function(){
         return maxEl;
     }
 
-    function next(){
-        var newCells = [];
-        var born = [3];
-        var survive = [3, 2];
+    this.next = function(force){
+        if (running || force){
+            var newCells = [];
+            var born = [3];
+            var survive = [3, 2];
 
-        for (var x = 0; x < cells.length; x++){
-            newCells[x] = [];
-            for (var y = 0; y < cells[x].length; y++) {
-                var neighbors = getNeighbors(x, y);
-                var nc = neighbors.length;
-                var isAlive = cells[x][y]["alive"];
-                var isNextAlive = (isAlive && survive.indexOf(nc) !== -1) || (!isAlive && born.indexOf(nc) !== -1);
+            for (var x = 0; x < cells.length; x++){
+                newCells[x] = [];
+                for (var y = 0; y < cells[x].length; y++) {
+                    var neighbors = getNeighbors(x, y);
+                    var nc = neighbors.length;
+                    var isAlive = cells[x][y]["alive"];
+                    var isNextAlive = (isAlive && survive.indexOf(nc) !== -1) || (!isAlive && born.indexOf(nc) !== -1);
 
-                var cl = isNextAlive ? getNextColor(neighbors.map(function(item){ return item["color"]; })) : deadColor;
+                    var cl = isNextAlive ? getNextColor(neighbors.map(function(item){ return item["color"]; })) : deadColor;
 
-                newCells[x][y] = {alive: isNextAlive, color: cl};
+                    newCells[x][y] = {alive: isNextAlive, color: cl};
+                }
             }
+            cells = newCells;
+            redraw();
         }
-        cells = newCells;
+    };
+
+    function init(){
+        calcSize();
+        seedGame(0.4);
         redraw();
+        canvas.addEventListener("mousemove", onMouseMove, false);
+        window.addEventListener("resize", calcSize, true);
+        refresh = setInterval(next, 100);
     }
+
 
     init();
     return this;
 };
 
-window.addEventListener('load', Game, true);
+function startGame(){
+    window.game = Game("game");
+}
+
+function onKeyDown(e){
+    var keyCode = e.keyCode;
+    if(keyCode === 32) {
+        window.game.running = !window.game.running;
+    }
+    if(keyCode === 39) {
+        window.game.next(true);
+    }
+}
+
+window.addEventListener('load', startGame, true);
+document.addEventListener("keydown", onKeyDown, false);
