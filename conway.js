@@ -74,21 +74,6 @@ var Game = function(canvasID){
             } else if (cells[xn][yn]["alive"] === true) {
                 neighbors.push(cells[xnf][ynf]);
             }
-
-            // drawCell(x, y, "#F00");
-            // if (loopAllowed){
-            //     if ( cells[xnf][ynf]["alive"] === true) {
-            //         drawCell(xnf, ynf, "#007300");
-            //     } else {
-            //         drawCell(xnf, ynf, "#0f0");
-            //     }
-            // } else if (!isOutside) {
-            //     if ( cells[xn][yn]["alive"] === true) {
-            //         drawCell(xn, yn, "#007373");
-            //     } else {
-            //         drawCell(xn, yn, "#0ff");
-            //     }
-            // }
         }
         return neighbors;
     };
